@@ -1,51 +1,60 @@
 <template>
   <h2>Monster Slayer</h2>
+  <div class="game">
+    <div>
+      <h1>{{ player }}</h1>
+      <div class="allPlayers">
+        <div class="singlePlayer">
+          <p>Player 1 :</p>
+          <div class="animated-progress">
+            <span
+              :style="{ backgroundColor: activeColor1, width: divWidth1 + '%' }"
+              >{{ divWidth1 }}%</span
+            >
+          </div>
+        </div>
 
-  <h1>{{ player }}</h1>
-  <div class="allPlayers">
-    <div class="singlePlayer">
-      <p>Player 1:</p>
-      <div class="animated-progress">
-        <span :style="{ backgroundColor: activeColor1, width: divWidth1 + '%' }"
-          >{{ divWidth1 }}%</span
-        >
+        <div class="singlePlayer">
+          <p>Player 2 :</p>
+          <div class="animated-progress">
+            <span
+              :style="{ backgroundColor: activeColor2, width: divWidth2 + '%' }"
+              >{{ divWidth2 }}%</span
+            >
+          </div>
+        </div>
+
+        <div class="singlePlayer">
+          <p>Monster :</p>
+          <div class="animated-progress">
+            <span
+              :style="{ backgroundColor: activeColor3, width: divWidth3 + '%' }"
+              >{{ divWidth3 }}%</span
+            >
+          </div>
+        </div>
       </div>
+      <button @click="onAttack" :disabled="isAttackDisable">Attack</button>
+      <button @click="onSpecialAttack" :disabled="isSpecialAttackDisable">
+        Special attack
+      </button>
+      <button @click="onHeal" :disabled="isHealDisable">Heal</button>
+      <button @click="onSurrender()" :disabled="isSurrenderDisable">
+        Surrender
+      </button>
     </div>
 
-    <div class="singlePlayer">
-      <p>Player 2:</p>
-      <div class="animated-progress">
-        <span :style="{ backgroundColor: activeColor2, width: divWidth2 + '%' }"
-          >{{ divWidth2 }}%</span
-        >
-      </div>
-    </div>
-
-    <div class="singlePlayer">
-      <p>Monster Player :</p>
-      <div class="animated-progress">
-        <span :style="{ backgroundColor: activeColor3, width: divWidth3 + '%' }"
-          >{{ divWidth3 }}%</span
-        >
-      </div>
-    </div>
+    <ul v-if="battleLogEntries.length">
+      <li
+        :style="{ color: item.color }"
+        :key="i"
+        v-for="(item, i) in battleLogEntries"
+      >
+        {{ item.text }}
+      </li>
+    </ul>
+    <p class="battle-logs" v-else>Battle logs</p>
   </div>
-  <button @click="attack">Attack</button>
-  <button @click="specialAttack" :disabled="isSpecialAttackDisable">
-    Special attack
-  </button>
-  <button @click="heal" :disabled="isHealDisable">heal</button>
-  <button @click="surrender" :disabled="isSurrenderDisable">surrender</button>
-
-  <ul>
-    <li
-      :style="{ color: item.color }"
-      :key="i"
-      v-for="(item, i) in todoEntries"
-    >
-      {{ item.text }}
-    </li>
-  </ul>
 </template>
 
 <script setup>
@@ -65,14 +74,16 @@ const attack2 = ref(0);
 const specialAttack1 = ref(0);
 const specialAttack2 = ref(0);
 const isSpecialAttackDisable = ref(true);
-const todoEntries = ref([]);
+const battleLogEntries = ref([]);
 const textColor = ref("");
+const isAttackDisable = ref(false);
 
-const surrender = () => {
-  todoEntries.value.unshift({
-    text: `${count.value}  surrender himself!!`,
-    color: "black",
-  });
+const onSurrender = (isPlayer) => {
+  const activePLayer = isPlayer
+    ? `${isPlayer} loss the game!!`
+    : `${player.value} surrender himself!!`;
+
+  alert(activePLayer);
 
   divWidth1.value = 100;
   divWidth2.value = 100;
@@ -85,9 +96,7 @@ const surrender = () => {
   specialAttack1.value = 0;
   specialAttack2.value = 0;
   isSpecialAttackDisable.value = true;
-  setTimeout(() => {
-    todoEntries.value = [];
-  }, 2000);
+  battleLogEntries.value = [];
 };
 
 watch(
@@ -98,7 +107,7 @@ watch(
     } else {
       activeColor1.value = "red";
       if (v < 1) {
-        surrender();
+        onSurrender("Player 1");
       }
     }
   }
@@ -111,7 +120,7 @@ watch(
     else {
       activeColor2.value = "red";
       if (v < 1) {
-        surrender();
+        onSurrender("Player 2");
       }
     }
   }
@@ -125,86 +134,111 @@ watch(
     } else {
       activeColor3.value = "red";
       if (v < 1) {
-        surrender();
+        onSurrender("Monster");
       }
     }
   }
 );
 
-const specialAttack = () => {
+const onSpecialAttack = () => {
   textColor.value = "blue";
   if (count.value === 1) {
     divWidth2.value =
       divWidth2.value -
-      generateRandomIntegerInRange(0, 20, "special attack", "p2");
+      generateRandomIntegerInRange(0, 20, "special attacked", "player 2");
     divWidth3.value =
       divWidth3.value -
-      generateRandomIntegerInRange(0, 20, "special attack", "p3");
+      generateRandomIntegerInRange(0, 20, "special attacked", "monster");
     specialAttack1.value = 0;
   } else if (count.value === 2) {
     divWidth1.value =
       divWidth1.value -
-      generateRandomIntegerInRange(0, 20, "special attack", "p1");
+      generateRandomIntegerInRange(0, 20, "special attacked", "player 1");
     divWidth3.value =
       divWidth3.value -
-      generateRandomIntegerInRange(0, 20, "special attack", "p3");
+      generateRandomIntegerInRange(0, 20, "special attacked", "monster");
     specialAttack2.value = 0;
   }
   isSpecialAttackDisable.value = true;
-  count.value++;
+  if (count.value === 2) {
+    setTimeout(() => {
+      count.value++;
+    }, 1000);
+  } else {
+    count.value++;
+  }
 };
+const player = computed(() => {
+  let text = "";
+  if (count.value === 1) text = "Player 1";
+  else if (count.value === 2) text = "Player 2";
+  else if (count.value === 3) text = "Monster";
+  return text;
+});
 
-const generateRandomIntegerInRange = (min, max, action, player) => {
+const generateRandomIntegerInRange = (min, max, action, otherPlayer) => {
   const percentage = Math.floor(Math.random() * (max - min + 1)) + min;
-  todoEntries.value.unshift({
-    text: `${count.value}  ${action}  ${player}  ,  ${percentage} %`,
+  battleLogEntries.value.unshift({
+    text: `${player.value}  ${action}  ${otherPlayer}  ,  ${percentage} %`,
     color: textColor.value,
   });
   return percentage;
 };
 
-const player = computed(() => {
-  let text = "";
-  if (count.value === 1) text = "player 1";
-  else if (count.value === 2) text = "player 2";
-  else if (count.value === 3) text = "player 3";
-  return text;
-});
-
-const heal = () => {
+const onHeal = () => {
   textColor.value = "green";
   if (count.value === 1) {
     divWidth1.value =
-      divWidth1.value + generateRandomIntegerInRange(0, 15, "heal", "himself");
+      divWidth1.value +
+      generateRandomIntegerInRange(0, 15, "healed", "himself");
     attack1.value = 0;
   } else if (count.value === 2) {
     divWidth2.value =
-      divWidth2.value + generateRandomIntegerInRange(0, 15, "heal", "himself");
+      divWidth2.value +
+      generateRandomIntegerInRange(0, 15, "healed", "himself");
     attack2.value = 0;
   }
   isHealDisable.value = true;
-  count.value++;
+  if (count.value === 2) {
+    setTimeout(() => {
+      count.value++;
+    }, 1000);
+  } else {
+    count.value++;
+  }
 };
 
-const attack = () => {
+const onAttack = () => {
   textColor.value = "red";
   isSurrenderDisable.value = false;
   if (count.value === 1) {
     attack1.value++;
     specialAttack1.value++;
     divWidth2.value =
-      divWidth2.value - generateRandomIntegerInRange(0, 10, "attack", "p2");
+      divWidth2.value -
+      generateRandomIntegerInRange(0, 10, "attacked", "player 2");
     divWidth3.value =
-      divWidth3.value - generateRandomIntegerInRange(0, 10, "attack", "p3");
+      divWidth3.value -
+      generateRandomIntegerInRange(0, 10, "attacked", "player 3");
   } else if (count.value === 2) {
     attack2.value++;
     specialAttack2.value++;
     divWidth1.value =
-      divWidth1.value - generateRandomIntegerInRange(0, 10, "attack", "p1");
+      divWidth1.value -
+      generateRandomIntegerInRange(0, 10, "attacked", "player 1");
     divWidth3.value =
-      divWidth3.value - generateRandomIntegerInRange(0, 10, "attack", "p3");
+      divWidth3.value -
+      generateRandomIntegerInRange(0, 10, "attacked", "player 3");
   }
-  count.value++;
+  if (count.value === 2) {
+    isAttackDisable.value = true;
+    isSurrenderDisable.value = true;
+    setTimeout(() => {
+      count.value++;
+    }, 1000);
+  } else {
+    count.value++;
+  }
 };
 
 watch(
@@ -222,14 +256,21 @@ watch(
     }
 
     if (v === 3) {
+      textColor.value = "red";
       divWidth1.value =
-        divWidth1.value - generateRandomIntegerInRange(0, 15, "attack", "p1");
+        divWidth1.value -
+        generateRandomIntegerInRange(0, 15, "attacked", "player 1");
       divWidth2.value =
-        divWidth2.value - generateRandomIntegerInRange(0, 15, "attack", "p2");
+        divWidth2.value -
+        generateRandomIntegerInRange(0, 15, "attacked", "player 2");
       if (divWidth3.value < 30) {
         activeColor3.value = "red";
       }
-      count.value = 1;
+      setTimeout(() => {
+        count.value = 1;
+        isAttackDisable.value = false;
+        isSurrenderDisable.value = false;
+      }, 2000);
     }
   }
 );
@@ -237,6 +278,17 @@ watch(
 
 <!-- Add "scoped" attribute to limit CSS to this  only -->
 <style scoped>
+.battle-logs {
+  padding: 4.5%;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.26);
+  height: 83px;
+  padding-top: 7%;
+}
+.game {
+  display: flex;
+  justify-content: center;
+  gap: 10px 175px;
+}
 p {
   padding: 10px;
 }
